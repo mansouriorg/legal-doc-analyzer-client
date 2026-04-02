@@ -1,65 +1,121 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
 
 export default function Home() {
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+
+    setIsUploading(true);
+
+    // Prepare the file to be sent to your NestJS backend
+    const formData = new FormData();
+    formData.append("document", file);
+
+    try {
+      // NOTE: This is where we will call your NestJS server (port 3001).
+      // For now, it is simulated with a timeout so you can see the UI loading state.
+      
+      /*
+      const response = await fetch("http://localhost:3001/analyze", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      */
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      alert(`Simulated upload for ${file.name}. Ready to connect to NestJS!`);
+
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Failed to upload document.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
+      <div className="max-w-3xl w-full bg-white rounded-2xl shadow-xl p-10 border border-slate-100">
+        
+        {/* Header Section */}
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">
+            AI Legal Document Analyzer
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-lg text-slate-600">
+            Upload your contracts and international agreements. Our AI will automatically extract key clauses, obligations, and flag potential risks.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        {/* Upload Zone */}
+        <div className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center hover:bg-slate-50 hover:border-blue-500 transition-colors duration-200 group">
+          <input
+            type="file"
+            id="file-upload"
+            className="hidden"
+            accept=".pdf,.doc,.docx"
+            onChange={handleFileChange}
+          />
+          <label
+            htmlFor="file-upload"
+            className="cursor-pointer flex flex-col items-center justify-center space-y-4"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {/* Upload Icon (Inline SVG) */}
+            <svg
+              className={`w-16 h-16 ${file ? 'text-blue-500' : 'text-slate-400 group-hover:text-blue-500'} transition-colors`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
+            </svg>
+            
+            <div className="text-slate-700 font-medium text-lg">
+              {file ? (
+                <span className="text-blue-600 font-semibold">{file.name}</span>
+              ) : (
+                <span>Click to browse or drag and drop</span>
+              )}
+            </div>
+            <p className="text-sm text-slate-500">
+              Supports PDF, DOC, and DOCX (Max 10MB)
+            </p>
+          </label>
         </div>
-      </main>
-    </div>
+
+        {/* Action Button */}
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={handleUpload}
+            disabled={!file || isUploading}
+            className={`px-8 py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
+              !file || isUploading
+                ? "bg-slate-300 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg"
+            }`}
+          >
+            {isUploading ? "Analyzing Document..." : "Analyze Document"}
+          </button>
+        </div>
+
+      </div>
+    </main>
   );
 }
