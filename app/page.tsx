@@ -4,19 +4,12 @@ import { useState } from "react";
 import { analyzeDocument } from "@/services/api";
 import { DocumentAnalysis } from "@/types";
 import AnalysisResults from "@/components/document/AnalysisResults";
+import UploadZone from "@/components/document/UploadZone"; // Import our new component
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [analysisData, setAnalysisData] = useState<DocumentAnalysis | null>(null);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-      // Reset the previous analysis if the user selects a new file
-      setAnalysisData(null); 
-    }
-  };
 
   const handleUpload = async () => {
     if (!file) return;
@@ -55,47 +48,15 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Upload Zone */}
-          <div className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center hover:bg-slate-50 hover:border-blue-500 transition-colors duration-200 group">
-            <input
-              type="file"
-              id="file-upload"
-              className="hidden"
-              accept=".pdf,.doc,.docx"
-              onChange={handleFileChange}
-            />
-            <label
-              htmlFor="file-upload"
-              className="cursor-pointer flex flex-col items-center justify-center space-y-4"
-            >
-              {/* Upload Icon (Inline SVG) */}
-              <svg
-                className={`w-16 h-16 ${file ? 'text-blue-500' : 'text-slate-400 group-hover:text-blue-500'} transition-colors`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                />
-              </svg>
-              
-              <div className="text-slate-700 font-medium text-lg">
-                {file ? (
-                  <span className="text-blue-600 font-semibold">{file.name}</span>
-                ) : (
-                  <span>Click to browse or drag and drop</span>
-                )}
-              </div>
-              <p className="text-sm text-slate-500">
-                Supports PDF, DOC, and DOCX (Max 10MB)
-              </p>
-            </label>
-          </div>
+          {/* New Drag and Drop Upload Zone */}
+          <UploadZone 
+            onFileSelect={(selectedFile) => {
+              setFile(selectedFile);
+              setAnalysisData(null); // Reset analysis if they drop a new file
+            }} 
+            selectedFile={file}
+            disabled={isUploading}
+          />
 
           {/* Action Button */}
           <div className="mt-8 flex justify-center">
