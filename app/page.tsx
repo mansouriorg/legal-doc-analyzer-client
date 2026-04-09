@@ -4,7 +4,8 @@ import { useState } from "react";
 import { analyzeDocument } from "@/services/api";
 import { DocumentAnalysis } from "@/types";
 import AnalysisResults from "@/components/document/AnalysisResults";
-import UploadZone from "@/components/document/UploadZone"; // Import our new component
+import UploadZone from "@/components/document/UploadZone";
+import LoadingState from "@/components/ui/LoadingState"; // Import the new LoadingState component
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -34,8 +35,13 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
       
-      {/* Show the upload box ONLY if we do not have analysis data yet */}
-      {!analysisData ? (
+      {/* 1. Show the Loading Animation if processing */}
+      {isUploading ? (
+        <div className="max-w-3xl w-full bg-white rounded-2xl shadow-xl p-10 border border-slate-100 min-h-[400px] flex items-center justify-center">
+          <LoadingState />
+        </div>
+      ) : !analysisData ? (
+        /* 2. Show the Upload Box if we are NOT loading and have NO data */
         <div className="max-w-3xl w-full bg-white rounded-2xl shadow-xl p-10 border border-slate-100">
           
           {/* Header Section */}
@@ -62,20 +68,20 @@ export default function Home() {
           <div className="mt-8 flex justify-center">
             <button
               onClick={handleUpload}
-              disabled={!file || isUploading}
+              disabled={!file}
               className={`px-8 py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
-                !file || isUploading
+                !file
                   ? "bg-slate-300 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg"
               }`}
             >
-              {isUploading ? "Analyzing Document..." : "Analyze Document"}
+              Analyze Document
             </button>
           </div>
 
         </div>
       ) : (
-        /* Render the AnalysisResults component if we have data */
+        /* 3. Render the AnalysisResults component if we HAVE data */
         <div className="w-full flex-grow flex flex-col">
           <AnalysisResults 
             data={analysisData} 
