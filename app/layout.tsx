@@ -29,13 +29,13 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
-        
+
         {/* Top Navigation Bar */}
-        <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm print:hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
-              <div className="flex items-center gap-8">
-                
+              <div className="flex items-center gap-3 sm:gap-8">
+
                 {/* Logo Area */}
                 <Link href="/" className="flex items-center gap-2 group">
                   <div className="bg-blue-600 p-1.5 rounded-lg group-hover:bg-blue-700 transition">
@@ -46,30 +46,25 @@ export default function RootLayout({
                   <span className="font-bold text-slate-900 text-xl tracking-tight">Legal<span className="text-blue-600">AI</span></span>
                 </Link>
 
-                {/* Nav Links */}
-                <div className="hidden sm:flex space-x-8 ml-4">
-                  <Link href="/" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors border-b-2 border-transparent hover:border-blue-600">
-                    New Analysis
+                {/* Nav Links: always visible, with shorter names on small screens */}
+                <div className="flex space-x-1 sm:space-x-8 sm:ml-4">
+                  <Link href="/" className="text-slate-600 hover:text-blue-600 px-2 sm:px-3 py-2 text-sm font-medium transition-colors border-b-2 border-transparent hover:border-blue-600">
+                    <span className="sm:hidden">New</span>
+                    <span className="hidden sm:inline">New Analysis</span>
                   </Link>
-                  <Link href="/dashboard" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors border-b-2 border-transparent hover:border-blue-600">
-                    Document History
+                  <Link href="/dashboard" className="text-slate-600 hover:text-blue-600 px-2 sm:px-3 py-2 text-sm font-medium transition-colors border-b-2 border-transparent hover:border-blue-600">
+                    <span className="sm:hidden">History</span>
+                    <span className="hidden sm:inline">Document History</span>
                   </Link>
                 </div>
               </div>
 
-              {/* Mock User Profile */}
-              <div className="flex items-center">
-                <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-600 font-bold text-sm">
-                  JD
-                </div>
-              </div>
-              
             </div>
           </div>
         </nav>
 
         {/* Page Content */}
-        <div className="flex-grow">
+        <div className="flex flex-grow flex-col">
           {children}
         </div>
 

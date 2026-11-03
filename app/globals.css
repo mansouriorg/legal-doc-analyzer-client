@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
+/* The whole app is built with light colours, so the page is light only. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #f8fafc;
+  --foreground: #0f172a;
 }
 
 @theme inline {
@@ -12,15 +14,22 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* A clear ring around whatever has keyboard focus. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+
+  /* The real file input is visually hidden, so the ring goes around the whole drop zone. */
+  [data-upload-zone]:has(input:focus-visible) {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
 }

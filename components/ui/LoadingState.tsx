@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 
+// The lines below only describe what the analysis does. They do not show real progress,
+// so this screen has no progress bar.
 export default function LoadingState() {
   const loadingSteps = [
     "Reading document structure...",
@@ -28,31 +30,30 @@ export default function LoadingState() {
 
   return (
     <div className="w-full py-16 flex flex-col items-center justify-center space-y-6">
-      {/* Animated Spinner */}
-      <div className="relative flex items-center justify-center">
+      {/* Screen readers get one steady message instead of the lines that keep changing */}
+      <p role="status" className="sr-only">Analyzing the document. Please wait.</p>
+
+      {/* Animated Spinner (it stands still for people whose system asks for less motion) */}
+      <div className="relative flex items-center justify-center" aria-hidden="true">
         <div className="absolute w-20 h-20 border-4 border-slate-100 rounded-full"></div>
-        <div className="w-20 h-20 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+        <div className="w-20 h-20 border-4 border-blue-600 rounded-full border-t-transparent animate-spin motion-reduce:animate-none"></div>
         {/* Inner pulsing dot */}
-        <div className="absolute w-4 h-4 bg-blue-600 rounded-full animate-pulse"></div>
+        <div className="absolute w-4 h-4 bg-blue-600 rounded-full animate-pulse motion-reduce:animate-none"></div>
       </div>
 
       {/* Dynamic Text */}
-      <div className="text-center h-16">
-        <h3 className="text-xl font-bold text-slate-800 mb-2 animate-pulse">
+      <div className="text-center h-16" aria-hidden="true">
+        <h3 className="text-xl font-bold text-slate-800 mb-2 animate-pulse motion-reduce:animate-none">
           Analyzing Document
         </h3>
-        <p className="text-sm font-medium text-slate-500 transition-all duration-300">
+        <p className="text-sm font-medium text-slate-500">
           {loadingSteps[currentStep]}
         </p>
       </div>
 
-      {/* Progress Bar indicator */}
-      <div className="w-64 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-        <div 
-          className="h-full bg-blue-600 transition-all duration-500 ease-out rounded-full"
-          style={{ width: `${((currentStep + 1) / loadingSteps.length) * 100}%` }}
-        ></div>
-      </div>
+      <p className="text-sm text-slate-500 text-center">
+        Please keep this page open until the analysis is ready. A long document can take a minute or more.
+      </p>
     </div>
   );
 }

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Backups made by the update commands.
+    ".update-backup/**",
   ]),
 ]);
 

@@ -1,59 +1,73 @@
-import { notFound } from 'next/navigation';
-// Adjust these import paths based on your actual alias setup (e.g., using @/ or ../../)
-import AnalysisResults from '../../../components/document/AnalysisResults';
-import { getDocumentById } from '../../../services/api'; 
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import AnalysisResults from "@/components/document/AnalysisResults";
+import DeleteDocumentButton from "@/components/document/DeleteDocumentButton";
+import DocumentChat from "@/components/document/DocumentChat";
+import { getDocumentById } from "@/services/api";
+import type { DocumentAnalysis } from "@/types";
 
 interface DocumentPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default async function DocumentPage({ params }: DocumentPageProps) {
-  // In Next.js App Router, the folder name [id] becomes the parameter
-  const documentId = params.id;
+  const { id: documentId } = await params;
+
+  let documentData: DocumentAnalysis | null = null;
+  let loadFailed = false;
 
   try {
-    // 1. Fetch the specific document's analysis from your backend
-    const documentData = await getDocumentById(documentId);
-
-    // 2. If the document doesn't exist, trigger the Next.js 404 page
-    if (!documentData) {
-      notFound();
-    }
-
-    // 3. Render the page using your existing AnalysisResults component
-    return (
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="mb-8 border-b pb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Analysis Report
-          </h1>
-          <p className="text-sm text-gray-500 mt-2">
-            Document ID: {documentId} • Retrieved securely
-          </p>
-        </div>
-
-        {/* Pass the fetched data to your client component. 
-          Make sure AnalysisResults is expecting this data prop! 
-        */}
-        <AnalysisResults data={documentData} />
-      </main>
-    );
-
+    documentData = await getDocumentById(documentId);
   } catch (error) {
     console.error(`Failed to fetch document ${documentId}:`, error);
-    
-    // This will either render this fallback UI or get caught by your app/error.tsx boundary
+    loadFailed = true;
+  }
+
+  if (loadFailed) {
     return (
-      <div className="container mx-auto px-4 py-12 text-center">
+      <main className="container mx-auto px-4 py-12 text-center">
         <h2 className="text-2xl font-semibold text-red-600 mb-2">
           Unable to load document
         </h2>
         <p className="text-gray-600">
-          There was an error retrieving the analysis for this legal document. It may have been deleted or you might lack permissions.
+          The server could not be reached or returned an error. Check that the backend is running and that the server address is right (see Changing the server address in the README), then reload this page.
         </p>
-      </div>
+      </main>
     );
   }
+
+  // notFound() throws, so it must stay outside the try block above.
+  if (documentData === null) {
+    notFound();
+  }
+
+  return (
+    <main className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="mb-8 border-b pb-6">
+        <Link href="/dashboard" className="mb-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-800 print:hidden">
+          &larr; Back to history
+        </Link>
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          Analysis Report
+        </h1>
+        <p className="text-sm text-gray-500 mt-2 wrap-break-word">
+          Document ID: {documentId}
+        </p>
+        <p className="mt-3 print:hidden">
+          <a href="#ask" className="text-sm font-medium text-blue-600 hover:text-blue-800">
+            Ask a question about this analysis &darr;
+          </a>
+        </p>
+        <div className="mt-4 print:hidden">
+          <DeleteDocumentButton documentId={documentId} documentName={documentData.documentName} />
+        </div>
+      </div>
+
+      <AnalysisResults data={documentData} />
+
+      <div id="ask" className="mx-auto mt-8 w-full max-w-3xl scroll-mt-20 print:hidden">
+        <DocumentChat key={documentId} documentId={documentId} />
+      </div>
+    </main>
+  );
 }

@@ -1,23 +1,52 @@
+"use client";
+
 import { DocumentAnalysis, RiskLevel } from "@/types";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import type { ReactNode } from "react";
+import { canPreviewFile } from "@/services/previewRules";
+import { cleanNotes } from "@/services/api";
+import { formatSavedAt } from "@/services/history";
+import LocalTime from "@/components/document/LocalTime";
+import ReportActions from "@/components/document/ReportActions";
+import { REPORT_DISCLAIMER } from "@/services/exportReport";
 
 interface AnalysisResultsProps {
   data: DocumentAnalysis;
-  file: File;
-  onReset: () => void;
+  // The uploaded file. Only available right after an upload; saved documents have none.
+  file?: File | null;
+  // The reset button is shown only when the parent passes this (the upload page does).
+  onReset?: () => void;
+  // A box that the parent wants between the notes and the title. The upload page uses it for the button that deletes a saved copy.
+  // It is not printed.
+  notice?: ReactNode;
 }
 
-export default function AnalysisResults({ data, file, onReset }: AnalysisResultsProps) {
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
+export default function AnalysisResults({ data, file, onReset, notice }: AnalysisResultsProps) {
+  const previewRef = useRef<HTMLIFrameElement>(null);
 
-  // Generate a local URL to preview the uploaded file without needing a backend
+  // Point the preview frame at a local URL for the uploaded file (no backend needed).
+  // The frame is updated directly instead of through state, which the lint rules prefer.
   useEffect(() => {
+    const frame = previewRef.current;
+    if (file === undefined || file === null || frame === null) {
+      return;
+    }
+
     const url = URL.createObjectURL(file);
-    setFileUrl(url);
-    
+    frame.src = url;
+
     // Cleanup the URL to prevent memory leaks when the component unmounts
     return () => URL.revokeObjectURL(url);
   }, [file]);
+
+  // A saved document has no file, so it gets one centred column instead of an empty preview pane.
+  const hasFile = file !== undefined && file !== null;
+  // Only PDF files can be shown in the frame. A Word file would start a download instead.
+  const showFrame = file !== undefined && file !== null && canPreviewFile(file);
+  // Notes written by the server, for example a warning that the document speaks to an AI.
+  const notes = cleanNotes(data.notes);
+  // When the server saved this analysis (undefined when the server sent no usable time). LocalTime shows it on the clock of the person.
+  const savedAt = formatSavedAt(data.savedAt) === null ? undefined : data.savedAt;
 
   const getRiskColor = (risk: RiskLevel) => {
     switch (risk) {
@@ -29,56 +58,88 @@ export default function AnalysisResults({ data, file, onReset }: AnalysisResults
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto mt-4 flex flex-col h-[85vh]">
-      
-      {/* Header and Controls */}
-      <div className="flex justify-between items-end mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">{data.documentName}</h2>
-          <p className="text-slate-500 text-sm mt-1">Analysis Complete</p>
+    <div className={`w-full max-w-7xl mx-auto mt-4 flex flex-col ${hasFile ? "lg:h-[85vh] print:h-auto" : ""}`}>
+
+      {data.isDemo === true ? (
+        <div role="note" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span className="font-semibold">Demo data.</span> The clauses below are a made-up example. They are not an analysis of your document.
         </div>
-        <button 
-          onClick={onReset}
-          className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
-        >
-          Analyze Another Document
-        </button>
+      ) : null}
+
+      {notes.length > 0 ? (
+        <div role="note" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="font-semibold">{notes.length === 1 ? "Note about this analysis" : "Notes about this analysis"}</p>
+          <ul className="mt-1 list-disc space-y-1 pl-5 wrap-break-word">
+            {notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {notice === undefined || notice === null ? null : <div className="mb-4 print:hidden">{notice}</div>}
+
+      {/* Header and Controls: stacked on small screens, side by side from the sm size up */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-6">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-bold text-slate-900 wrap-break-word">{data.documentName}</h2>
+          <p className="text-slate-500 text-sm mt-1">
+            {data.isDemo === true ? "Demo example" : "Analysis Complete"}
+            {savedAt === undefined ? null : <> &middot; Saved <LocalTime value={savedAt} /></>}
+          </p>
+        </div>
+        {/* The buttons are not printed. */}
+        <div className="self-start sm:self-auto print:hidden">
+          <ReportActions data={data} notes={notes}>
+            {onReset ? (
+              <button
+                onClick={onReset}
+                className="shrink-0 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+              >
+                Analyze Another Document
+              </button>
+            ) : null}
+          </ReportActions>
+        </div>
       </div>
 
-      {/* Split View Container */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-grow overflow-hidden">
-        
-        {/* Left Column: Document Viewer */}
-        <div className="bg-slate-200 rounded-xl overflow-hidden border border-slate-300 shadow-inner flex flex-col">
-          <div className="bg-slate-800 px-4 py-2 flex justify-between items-center text-slate-200 text-sm font-medium">
-            <span>Original Document</span>
-            <span className="text-xs text-slate-400">Preview</span>
-          </div>
-          <div className="flex-grow w-full h-full bg-white relative">
-            {fileUrl ? (
-              <iframe 
-                src={fileUrl} 
-                className="w-full h-full border-none absolute inset-0"
-                title="Document Preview"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-slate-400">
-                Loading preview...
-              </div>
-            )}
-          </div>
-        </div>
+      {/* Below the lg size the page scrolls as normal and the results come first.
+          From lg up, the preview is on the left and each side scrolls by itself. */}
+      <div className={`grid grid-cols-1 gap-6 flex-grow ${hasFile ? "lg:grid-cols-2 lg:overflow-hidden print:grid-cols-1 print:overflow-visible" : ""}`}>
 
-        {/* Right Column: AI Analysis Results (Scrollable) */}
-        <div className="flex flex-col overflow-y-auto pr-2 space-y-6 pb-10 custom-scrollbar">
-          
+        {/* Document Viewer: only when we have the uploaded file */}
+        {hasFile ? (
+          <div className="order-2 lg:order-1 h-96 lg:h-auto bg-slate-200 rounded-xl overflow-hidden border border-slate-300 shadow-inner flex flex-col print:hidden">
+            <div className="bg-slate-800 px-4 py-2 flex justify-between items-center text-slate-200 text-sm font-medium">
+              <span>Original Document</span>
+              <span className="text-xs text-slate-400">Preview</span>
+            </div>
+            <div className="flex-grow w-full h-full bg-white relative">
+              {showFrame ? (
+                <iframe
+                  ref={previewRef}
+                  className="w-full h-full border-none absolute inset-0"
+                  title="Document Preview"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full p-6 text-center text-slate-500">
+                  No preview is available for this file type. Only PDF files can be shown here.
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        {/* AI Analysis Results (scrolls by itself only from lg up, next to the preview) */}
+        <div className={`order-1 lg:order-2 flex flex-col space-y-6 lg:pb-10 ${hasFile ? "lg:overflow-y-auto lg:pr-2 print:overflow-visible" : "w-full max-w-3xl mx-auto"}`}>
+
           {/* Executive Summary */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky top-0 z-10">
+          <div className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 ${hasFile ? "lg:sticky lg:top-0 lg:z-10 print:static" : ""}`}>
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-2">
               <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               Executive Summary
             </h3>
-            <p className="text-slate-700 leading-relaxed text-sm">
+            <p className="text-slate-700 leading-relaxed text-sm wrap-break-word">
               {data.executiveSummary}
             </p>
           </div>
@@ -90,21 +151,21 @@ export default function AnalysisResults({ data, file, onReset }: AnalysisResults
             </h3>
             <div className="space-y-4">
               {data.clauses.map((clause) => (
-                <div key={clause.id} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-3 hover:border-blue-300 transition-colors">
-                  <div className="flex justify-between items-start">
-                    <h4 className="text-base font-bold text-slate-800">
+                <div key={clause.id} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-3 hover:border-blue-300 transition-colors wrap-break-word print:break-inside-avoid">
+                  <div className="flex items-start justify-between gap-3">
+                    <h4 className="min-w-0 text-base font-bold text-slate-800">
                       {clause.title}
                     </h4>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getRiskColor(clause.riskLevel)}`}>
+                    <span className={`shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-bold border ${getRiskColor(clause.riskLevel)}`}>
                       {clause.riskLevel} Risk
                     </span>
                   </div>
-                  
+
                   <div className="bg-slate-50 p-3 rounded-lg text-sm text-slate-600 border-l-4 border-slate-300">
                     <span className="block font-semibold text-slate-700 text-xs uppercase mb-1">Original Text:</span>
-                    "{clause.originalText}"
+                    &ldquo;{clause.originalText}&rdquo;
                   </div>
-                  
+
                   <div className="mt-1">
                     <span className="block font-semibold text-slate-700 text-xs uppercase mb-1">AI Implication:</span>
                     <span className="text-sm text-slate-700">{clause.explanation}</span>
@@ -113,7 +174,10 @@ export default function AnalysisResults({ data, file, onReset }: AnalysisResults
               ))}
             </div>
           </div>
-          
+
+          {/* Only a printed page shows this. A file carries the same warning, because it leaves the page. */}
+          <p className="hidden print:block text-xs text-slate-600">{REPORT_DISCLAIMER}</p>
+
         </div>
       </div>
     </div>

@@ -2,11 +2,13 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test services/api.test.mjs services/uploadRules.test.mjs services/previewRules.test.mjs services/history.test.mjs services/deleteFlow.test.mjs services/chatFlow.test.mjs tests/design.test.mjs tests/upload-zone.test.mjs tests/results-layout.test.mjs tests/screens.test.mjs tests/dashboard.test.mjs tests/delete-button.test.mjs tests/history-delete.test.mjs tests/document-chat.test.mjs tests/chat-stop.test.mjs tests/test-script.test.mjs tests/readme.test.mjs tests/keep-choice.test.mjs tests/suggested-questions.test.mjs tests/local-time.test.mjs tests/history-filter.test.mjs services/exportReport.test.mjs tests/report-actions.test.mjs tests/module-type.test.mjs services/apiAddress.test.mjs tests/server-address.test.mjs services/savedCopy.test.mjs tests/delete-now.test.mjs services/analyzeStop.test.mjs tests/analyze-stop.test.mjs"
   },
   "dependencies": {
     "next": "16.2.2",
